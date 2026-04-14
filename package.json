@@ -1,0 +1,6 @@
+{
+  "name": "saxo-agenda",
+  "version": "1.0.0",
+  "description": "Agenda PWA pour saxophoniste — site statique, données locales via File System Access API",
+  "private": true
+}

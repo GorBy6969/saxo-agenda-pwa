@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Saxo Agenda</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#21213a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Saxo Agenda">
+
+  <!-- Dépendances CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/fr.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/app.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg:      '#181826',
+            bg2:     '#21213a',
+            bg3:     '#2a2a46',
+            bg4:     '#333355',
+            accent:  '#d4a84c',
+            accent2: '#f0d070',
+            muted:   '#8a8580',
+          },
+          fontFamily: {
+            serif: ['"DM Serif Display"', 'Georgia', 'serif'],
+            mono:  ['"DM Mono"', 'monospace'],
+            sans:  ['"DM Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-white font-sans overflow-hidden h-screen">
+
+
+  <!-- ════════════════════════════════════════════════
+       ÉCRAN D'ACCUEIL
+       ════════════════════════════════════════════════ -->
+  <div id="init-screen"
+       x-data="initScreen()"
+       x-show="!appReady"
+       x-init="mounted()"
+       class="flex items-center justify-center h-screen bg-bg">
+
+    <div class="bg-bg2 border border-accent/30 rounded-2xl p-8 max-w-sm w-full text-center mx-4 shadow-xl">
+
+      <!-- Logo -->
+      <div class="text-5xl mb-3">♪</div>
+      <h1 class="font-serif text-3xl text-accent2 mb-2">Saxo Agenda</h1>
+      <p class="text-muted text-sm mb-7 leading-relaxed">
+        Gérez vos engagements musicaux.
+      </p>
+
+      <!-- Chargement -->
+      <div x-show="loading" class="flex items-center justify-center gap-2 text-muted text-sm mb-4">
+        <span class="animate-spin inline-block">⟳</span>
+        <span>Chargement…</span>
+      </div>
+
+      <!-- Erreur -->
+      <div x-show="error" x-text="error"
+           class="text-red-400 text-sm mb-4 p-3 bg-red-400/10 rounded-lg"></div>
+
+      <!-- ── Cas 1 : Demande de confirmation pour rouvrir le dernier fichier (Android) ── -->
+      <div x-show="screen === 'ask-reopen' && !loading" class="flex flex-col gap-3">
+        <p class="text-sm text-gray-300 mb-1">
+          Reprendre avec <span class="text-accent2 font-mono text-xs" x-text="_pendingFileName"></span> ?
+        </p>
+        <button @click="confirmReopen()" class="btn-primary w-full py-3 text-base justify-center">
+          <i data-lucide="folder-open" class="w-4 h-4"></i>
+          Oui, reprendre
+        </button>
+        <button @click="screen = 'start'" class="btn-secondary w-full py-2 text-sm justify-center">
+          Choisir un autre fichier
+        </button>
+      </div>
+
+      <!-- ── Cas 2 : Écran de démarrage standard (File System Access supporté) ── -->
+      <div x-show="screen === 'start' && !loading" class="flex flex-col gap-3">
+
+        <button @click="openFilePicker()" class="btn-primary w-full py-3 text-base justify-center">
+          <i data-lucide="folder-open" class="w-4 h-4"></i>
+          Ouvrir fichier MEGA
+        </button>
+
+        <button @click="createFile()" class="btn-secondary w-full py-2.5 text-sm justify-center">
+          <i data-lucide="file-plus" class="w-4 h-4"></i>
+          Créer un nouveau fichier
+        </button>
+
+        <!-- Cache dispo -->
+        <template x-if="cacheInfo">
+          <div class="mt-1 pt-3 border-t border-white/10">
+            <p class="text-xs text-muted mb-2">
+              Cache local :
+              <span class="text-gray-300" x-text="cacheInfo.eventCount + ' événement(s)'"></span>
+            </p>
+            <button @click="useCache()" class="btn-file w-full py-2 text-sm justify-center">
+              <i data-lucide="database" class="w-3.5 h-3.5"></i>
+              Continuer sans fichier
+            </button>
+          </div>
+        </template>
+      </div>
+
+      <!-- ── Cas 3 : File System Access non supporté (Firefox, etc.) ── -->
+      <div x-show="screen === 'no-fsa' && !loading" class="flex flex-col gap-3">
+        <div class="text-xs text-amber-400/80 bg-amber-400/10 border border-amber-400/20 rounded-lg p-3 mb-1 text-left">
+          Votre navigateur ne supporte pas l'accès direct aux fichiers.<br>
+          Utilisez <strong>Chrome</strong> pour la synchronisation MEGA automatique.
+        </div>
+
+        <template x-if="cacheInfo">
+          <div>
+            <p class="text-xs text-muted mb-2">
+              Cache local disponible :
+              <span class="text-gray-300" x-text="cacheInfo.eventCount + ' événement(s)'"></span>
+            </p>
+            <button @click="useCache()" class="btn-primary w-full py-3 text-base justify-center">
+              <i data-lucide="database" class="w-4 h-4"></i>
+              Ouvrir depuis le cache
+            </button>
+          </div>
+        </template>
+
+        <template x-if="!cacheInfo">
+          <p class="text-sm text-muted">Aucune donnée disponible. Ouvrez l'app dans Chrome.</p>
+        </template>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════
+       APPLICATION PRINCIPALE
+       ════════════════════════════════════════════════ -->
+  <div id="app"
+       x-data="saxoApp()"
+       x-show="appReady"
+       x-init="init()"
+       class="flex h-screen">
+
+    <!-- Overlay mobile pour fermer la sidebar -->
+    <div x-show="sidebarOpen"
+         @click="sidebarOpen = false"
+         class="fixed inset-0 bg-black/50 z-10 lg:hidden"></div>
+
+    <!-- ── SIDEBAR ── -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+           class="fixed lg:relative w-60 h-full bg-bg2 border-r border-white/10 flex flex-col z-20
+                  transition-transform duration-300 ease-in-out">
+
+      <!-- Logo + fichier actif -->
+      <div class="p-5 pb-4 border-b border-white/10">
+        <h1 class="font-serif text-xl text-accent2 tracking-wide">Saxo Agenda</h1>
+        <p id="file-name" class="text-xs text-accent/70 font-mono mt-0.5 truncate">—</p>
+        <p id="sync-status" class="text-xs text-muted font-mono mt-0.5">—</p>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 p-2 flex flex-col gap-1">
+        <button @click="setView('agenda'); sidebarOpen=false"
+                :class="view==='agenda' ? 'bg-accent/20 text-accent2' : 'text-gray-400 hover:bg-bg3 hover:text-white'"
+                class="nav-item">
+          <i data-lucide="calendar" class="w-4 h-4 shrink-0"></i>
+          Agenda
+        </button>
+        <button @click="setView('list'); sidebarOpen=false"
+                :class="view==='list' ? 'bg-accent/20 text-accent2' : 'text-gray-400 hover:bg-bg3 hover:text-white'"
+                class="nav-item">
+          <i data-lucide="list" class="w-4 h-4 shrink-0"></i>
+          Liste
+        </button>
+      </nav>
+
+      <!-- Actions fichier -->
+      <div class="p-2 pb-5 border-t border-white/10 flex flex-col gap-2">
+        <button @click="exportJSON()" class="btn-file">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          Exporter JSON
+        </button>
+        <button @click="changeFile()" class="btn-file" style="opacity:0.7">
+          <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
+          Changer de fichier
+        </button>
+      </div>
+    </aside>
+
+
+    <!-- ── ZONE PRINCIPALE ── -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+
+      <!-- Topbar -->
+      <header class="bg-bg2 border-b border-white/10 px-4 py-2 flex flex-wrap items-center gap-2 shrink-0">
+
+        <button @click="sidebarOpen = !sidebarOpen"
+                class="lg:hidden text-gray-400 hover:text-white p-1.5">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <span class="font-serif text-lg flex-1"
+              x-text="view === 'agenda' ? 'Agenda' : 'Tous les événements'"></span>
+
+        <button @click="openModal(null)" class="btn-primary">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Nouvel événement</span>
+        </button>
+
+        <!-- Contrôles calendrier -->
+        <div x-show="view === 'agenda'"
+             class="w-full flex items-center justify-between gap-2 pt-1 pb-0.5">
+
+          <div class="flex bg-bg3 p-0.5 rounded-lg">
+            <button @click="calView='month'; renderCal()"
+                    :class="calView==='month' ? 'bg-bg4 text-white' : 'text-muted'"
+                    class="px-3 py-1 rounded-md text-sm transition-colors">Mois</button>
+            <button @click="calView='week'; renderCal()"
+                    :class="calView==='week' ? 'bg-bg4 text-white' : 'text-muted'"
+                    class="px-3 py-1 rounded-md text-sm transition-colors">Semaine</button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button @click="calPrev()" class="text-gray-400 hover:text-accent2 p-1">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <span class="font-serif text-sm min-w-[120px] text-center" x-text="calTitle"></span>
+            <button @click="calNext()" class="text-gray-400 hover:text-accent2 p-1">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Contenu scrollable -->
+      <div id="content" class="flex-1 overflow-y-auto p-4 md:p-5">
+        <div id="view-agenda" x-show="view==='agenda'"></div>
+        <div id="view-list"   x-show="view==='list'"></div>
+      </div>
+    </main>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════
+       MODALE ÉVÉNEMENT (CRUD complet)
+       ════════════════════════════════════════════════ -->
+  <div id="modal-overlay"
+       x-data
+       x-show="$store.modal.open"
+       @click.self="$store.modal.close()"
+       class="fixed inset-0 bg-black/75 z-50 flex items-end md:items-start md:justify-center
+              overflow-y-auto md:py-6 px-0 md:px-4">
+
+    <div id="modal"
+         class="bg-bg2 border border-white/10 w-full md:max-w-2xl md:rounded-2xl
+                rounded-t-2xl max-h-[92vh] overflow-y-auto animate-slide-up">
+
+      <div class="flex items-center gap-3 px-5 py-4 border-b border-white/10 sticky top-0 bg-bg2 z-10">
+        <span class="font-serif text-xl flex-1" id="modal-title">Nouvel événement</span>
+        <button @click="$store.modal.close()" class="btn-icon">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div id="modal-body" class="p-5 flex flex-col gap-6"></div>
+
+      <div class="flex items-center gap-2 px-5 py-4 border-t border-white/10 flex-wrap
+                  sticky bottom-0 bg-bg2">
+        <button id="btn-delete" onclick="SaxoEvents.deleteEvent()"
+                style="display:none" class="btn-danger">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          Supprimer
+        </button>
+        <button id="btn-duplicate" onclick="SaxoEvents.duplicateEvent()"
+                style="display:none" class="btn-secondary">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          Dupliquer
+        </button>
+        <div class="flex-1"></div>
+        <button @click="$store.modal.close()" class="btn-secondary">Annuler</button>
+        <button onclick="SaxoEvents.saveEvent()" class="btn-primary">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          <span>Enregistrer</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════
+       TOAST
+       ════════════════════════════════════════════════ -->
+  <div id="toast"
+       class="fixed bottom-6 right-4 z-[100] bg-bg4 border border-white/20 rounded-xl
+              px-4 py-2.5 text-sm pointer-events-none
+              translate-y-4 opacity-0 transition-all duration-300">
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════
+       MODULES JS
+       ════════════════════════════════════════════════ -->
+  <script src="/js/storage.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/events.js"></script>
+  <script src="/js/calendar.js"></script>
+  <script src="/js/app.js"></script>
+
+</body>
+</html>
