@@ -54,7 +54,7 @@
        ════════════════════════════════════════════════ -->
   <div id="init-screen"
        x-data="initScreen()"
-       x-show="!appReady"
+       x-show="!$store.appState.ready"
        x-init="mounted()"
        class="flex items-center justify-center h-screen bg-bg">
 
@@ -153,7 +153,7 @@
        ════════════════════════════════════════════════ -->
   <div id="app"
        x-data="saxoApp()"
-       x-show="appReady"
+       x-show="$store.appState.ready"
        x-init="init()"
        class="flex h-screen">
 

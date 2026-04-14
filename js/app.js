@@ -27,6 +27,11 @@ window.appReady = false;
    ══════════════════════════════════════════════════════════ */
 document.addEventListener('alpine:init', () => {
 
+  /* Store partagé : état global de l'application */
+  Alpine.store('appState', {
+    ready: false,
+  });
+
   Alpine.store('modal', {
     open: false,
     close() {
@@ -144,10 +149,10 @@ function initScreen() {
 
     /* ── Active l'app avec les données chargées ── */
     _enterApp(data, fileName) {
-      window._db       = data;
-      window.appReady  = true;
-      this.appReady    = true;
-      this.loading     = false;
+      window._db   = data;
+      this.loading = false;
+      /* Déclenche l'affichage de l'app via le store Alpine réactif */
+      Alpine.store('appState').ready = true;
       /* Met à jour le nom de fichier affiché dans la sidebar */
       this.$nextTick(() => {
         const el = document.getElementById('file-name');
