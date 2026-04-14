@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "comment": "Saxo Agenda — site statique pur, aucune serverless function",
-
   "headers": [
     {
       "source": "/(.*)",
