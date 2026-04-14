@@ -10,6 +10,7 @@
   --bg2:         #21213a;
   --bg3:         #2a2a46;
   --bg4:         #333355;
+  --bg-card:     #3f3f6e;
   --accent:      #d4a84c;
   --accent2:     #f0d070;
   --accent-dim:  rgba(212,168,76,0.20);
@@ -341,8 +342,8 @@ select option { background: var(--bg3); }
 /* Jour actuel : encadré en or */
 .month-cell.today { border-color: var(--accent); }
 /* Cellule avec événements : cliquable */
-.month-cell.has-events { cursor: pointer; }
-.month-cell.has-events:hover { background: var(--bg3); }
+.month-cell.has-events { cursor: pointer; background: #2e2e52; }
+.month-cell.has-events:hover { background: var(--bg-card); }
 
 /* Numéro du jour */
 .day-num {
@@ -424,14 +425,14 @@ select option { background: var(--bg3); }
   font-size: 12px;
   padding: 4px 7px;
   border-radius: 5px;
-  background: rgba(212,168,76,0.22);
+  background: var(--bg-card);
   color: #f5e9c0;
   border: 1px solid rgba(212,168,76,0.40);
   border-left: 3px solid var(--accent);
   cursor: pointer;
   margin-bottom: 3px;
 }
-.week-event-block:hover { background: rgba(212,168,76,0.38); color: #fff; }
+.week-event-block:hover { background: #4a4a7e; color: #fff; }
 .week-event-block .ev-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .week-event-block .ev-time { font-size: 10px; color: var(--accent2); font-family: 'DM Mono', monospace; margin-top: 1px; }
 
@@ -442,7 +443,7 @@ select option { background: var(--bg3); }
 .event-list { display: flex; flex-direction: column; gap: 10px; }
 
 .event-card {
-  background: var(--bg3);
+  background: var(--bg-card);
   border: 1px solid rgba(255,255,255,0.15);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius-lg);
@@ -453,7 +454,7 @@ select option { background: var(--bg3); }
   cursor: pointer;
   transition: all 0.15s;
 }
-.event-card:hover { border-color: var(--accent); background: var(--bg4); }
+.event-card:hover { border-color: var(--accent); background: #4a4a7e; }
 
 /* Bloc date (jour + mois) à gauche de la carte */
 .event-card-date {
