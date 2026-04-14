@@ -43,6 +43,13 @@ const SaxoStorage = (() => {
     return ('showOpenFilePicker' in window);
   }
 
+  /** true si le navigateur supporte l'écriture dans un fichier local (Chrome) */
+  function supportsFileWrite() {
+    return supportsFileSystemAccess() &&
+           typeof FileSystemFileHandle !== 'undefined' &&
+           'createWritable' in FileSystemFileHandle.prototype;
+  }
+
 
   /* ══════════════════════════════════════
      INDEXED DB — persistance du handle
@@ -107,38 +114,86 @@ const SaxoStorage = (() => {
      ══════════════════════════════════════ */
 
   /**
-   * Ouvre le sélecteur de fichier natif et charge le JSON.
-   * Stocke le handle dans IndexedDB pour les sessions futures.
+   * Ouvre le sélecteur de fichier et charge le JSON.
+   * Essaie File System Access API (Chrome) en premier,
+   * puis fallback sur <input type="file"> (Firefox, etc.).
    * Retourne { data, fileName } ou null si annulé.
    */
   async function pickAndLoadFile() {
-    if (!supportsFileSystemAccess()) return null;
+    /* ── Tentative File System Access API (Chrome, écriture directe) ── */
+    if (supportsFileSystemAccess()) {
+      try {
+        let handle;
+        [handle] = await window.showOpenFilePicker({
+          types: [{
+            description: 'Fichier JSON Saxo Agenda',
+            accept: { 'application/json': ['.json'] },
+          }],
+          excludeAcceptAllOption: false,
+          multiple: false,
+        });
 
-    let handle;
-    try {
-      [handle] = await window.showOpenFilePicker({
-        types: [{
-          description: 'Fichier JSON Saxo Agenda',
-          accept: { 'application/json': ['.json'] },
-        }],
-        excludeAcceptAllOption: false,
-        multiple: false,
-      });
-    } catch (e) {
-      // L'utilisateur a annulé le sélecteur
-      if (e.name === 'AbortError') return null;
-      throw e;
+        const data = await _readHandle(handle);
+        if (!data) return null;
+
+        _fileHandle = handle;
+        await _saveHandleToIDB(handle);
+        saveToLocalStorage(data);
+        updateSyncStatus('saved');
+        return { data, fileName: handle.name };
+
+      } catch (e) {
+        if (e.name === 'AbortError') return null;
+        /* FSA non fonctionnel dans ce navigateur → fallback */
+        console.warn('[FS] showOpenFilePicker indisponible, fallback input :', e.message);
+      }
     }
 
-    const data = await _readHandle(handle);
-    if (!data) return null;
-
-    _fileHandle = handle;
-    await _saveHandleToIDB(handle);
-    saveToLocalStorage(data);
-    updateSyncStatus('saved');
-    return { data, fileName: handle.name };
+    /* ── Fallback universel : <input type="file"> (Firefox, etc.) ── */
+    return await _loadFileViaInput();
   }
+
+  /**
+   * Ouvre un <input type="file"> programmatique (fallback Firefox).
+   * Pas d'écriture automatique : les sauvegardes vont dans localStorage
+   * + download manuel via le bouton "Exporter JSON".
+   */
+  function _loadFileViaInput() {
+    return new Promise((resolve) => {
+      const input    = document.createElement('input');
+      input.type     = 'file';
+      input.accept   = '.json,application/json';
+
+      input.onchange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) { resolve(null); return; }
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          if (!data.events) data.events = [];
+          if (!data.meta)   data.meta   = { typologies: ['Concert', 'Mariage'], setTypes: [] };
+          /* Mémorise le nom pour l'afficher dans la sidebar */
+          _fallbackFileName = file.name;
+          saveToLocalStorage(data);
+          updateSyncStatus('cache-only');
+          resolve({ data, fileName: file.name });
+        } catch (err) {
+          console.error('[Input] Lecture échouée :', err.message);
+          resolve(null);
+        }
+      };
+
+      /* Certains navigateurs ne déclenchent pas onchange si annulé */
+      input.oncancel = () => resolve(null);
+      input.click();
+
+      /* Sécurité : résoudre après 5 min si rien ne se passe */
+      setTimeout(() => resolve(null), 300_000);
+    });
+  }
+
+  /* Nom de fichier mémorisé en mode fallback (pas de FileHandle) */
+  let _fallbackFileName = null;
 
   /**
    * Tente de rouvrir le dernier fichier utilisé (handle stocké en IDB).
@@ -279,7 +334,7 @@ const SaxoStorage = (() => {
    * Retourne le nom du fichier actuellement ouvert, ou null.
    */
   function getCurrentFileName() {
-    return _fileHandle ? _fileHandle.name : null;
+    return _fileHandle ? _fileHandle.name : (_fallbackFileName || null);
   }
 
   /**
@@ -379,9 +434,9 @@ const SaxoStorage = (() => {
     if (!el) return;
     const labels = {
       syncing:      '⟳ Écriture…',
-      saved:        '✓ Fichier à jour',
+      saved:        '✓ Fichier MEGA à jour',
       error:        '⚠ Erreur écriture',
-      'cache-only': '⚡ Cache local',
+      'cache-only': '⚡ Cache local — exporter pour sync',
       disconnected: '— Aucun fichier',
     };
     const colors = {

@@ -357,17 +357,19 @@ select option { background: var(--bg3); }
 .event-chip {
   display: block;
   font-size: 11px;
-  padding: 2px 5px;
+  font-weight: 500;
+  padding: 2px 6px;
   border-radius: 4px;
-  background: var(--accent-dim);
-  color: var(--accent2);
+  background: rgba(212,168,76,0.30);
+  color: #f5e9c0;
+  border: 1px solid rgba(212,168,76,0.45);
   margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
 }
-.event-chip:hover { background: rgba(212,168,76,0.30); }
+.event-chip:hover { background: rgba(212,168,76,0.50); color: #fff; }
 
 /* Mobile : cellules plus petites */
 @media (max-width: 640px) {
@@ -420,17 +422,18 @@ select option { background: var(--bg3); }
 /* Bloc événement dans la vue semaine */
 .week-event-block {
   font-size: 12px;
-  padding: 3px 6px;
+  padding: 4px 7px;
   border-radius: 5px;
-  background: var(--accent-dim);
-  color: var(--accent2);
-  cursor: pointer;
-  margin-bottom: 2px;
+  background: rgba(212,168,76,0.22);
+  color: #f5e9c0;
+  border: 1px solid rgba(212,168,76,0.40);
   border-left: 3px solid var(--accent);
+  cursor: pointer;
+  margin-bottom: 3px;
 }
-.week-event-block:hover { background: rgba(212,168,76,0.30); }
-.week-event-block .ev-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.week-event-block .ev-time { font-size: 10px; color: var(--text2); font-family: 'DM Mono', monospace; }
+.week-event-block:hover { background: rgba(212,168,76,0.38); color: #fff; }
+.week-event-block .ev-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.week-event-block .ev-time { font-size: 10px; color: var(--accent2); font-family: 'DM Mono', monospace; margin-top: 1px; }
 
 
 /* ════════════════════════════════════════
@@ -439,8 +442,9 @@ select option { background: var(--bg3); }
 .event-list { display: flex; flex-direction: column; gap: 10px; }
 
 .event-card {
-  background: var(--bg2);
-  border: 1px solid var(--border2);
+  background: var(--bg3);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-left: 3px solid var(--accent);
   border-radius: var(--radius-lg);
   padding: 14px 16px;
   display: flex;
@@ -449,34 +453,36 @@ select option { background: var(--bg3); }
   cursor: pointer;
   transition: all 0.15s;
 }
-.event-card:hover { border-color: var(--border); background: var(--bg3); }
+.event-card:hover { border-color: var(--accent); background: var(--bg4); }
 
 /* Bloc date (jour + mois) à gauche de la carte */
 .event-card-date {
   text-align: center;
   min-width: 44px;
   flex-shrink: 0;
-  background: var(--accent-dim2);
+  background: rgba(212,168,76,0.18);
   border-radius: 8px;
   padding: 6px 4px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent);
 }
 .event-card-date .ecd-day { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--accent2); line-height: 1; }
-.event-card-date .ecd-mon { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; text-transform: uppercase; margin-top: 2px; }
+.event-card-date .ecd-mon { font-size: 10px; color: var(--accent); font-family: 'DM Mono', monospace; text-transform: uppercase; margin-top: 2px; }
 
 .event-card-info { flex: 1; min-width: 0; }
-.event-card-name { font-size: 15px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.event-card-meta { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
+.event-card-name { font-size: 15px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event-card-meta { font-size: 12px; color: var(--text2); margin-top: 3px; font-family: 'DM Mono', monospace; }
 
 /* Badge type (Concert, Mariage…) */
 .event-type-badge {
   font-size: 11px;
-  padding: 3px 8px;
+  padding: 3px 10px;
   border-radius: 20px;
-  background: var(--bg4);
-  color: var(--text2);
+  background: rgba(212,168,76,0.20);
+  color: var(--accent2);
+  border: 1px solid rgba(212,168,76,0.40);
   white-space: nowrap;
   flex-shrink: 0;
+  font-weight: 500;
 }
 
 /* État vide */
