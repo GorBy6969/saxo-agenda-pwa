@@ -157,6 +157,9 @@ function initScreen() {
       this.$nextTick(() => {
         const el = document.getElementById('file-name');
         if (el) el.textContent = fileName || 'Cache local';
+        /* Rafraîchit la vue : saxoApp.init() a tourné AVANT le chargement
+           des données (async), la première render était donc vide. */
+        window._renderCurrentView?.();
       });
     },
   };
