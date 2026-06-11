@@ -1,0 +1,127 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "sw.js",
+      "file_type": "code",
+      "source_file": "sw.js",
+      "source_location": "L1",
+      "id": "sw_js",
+      "community": 1,
+      "norm_label": "sw.js"
+    },
+    {
+      "label": "calendar.js",
+      "file_type": "code",
+      "source_file": "js/calendar.js",
+      "source_location": "L1",
+      "id": "js_calendar_js",
+      "community": 2,
+      "norm_label": "calendar.js"
+    },
+    {
+      "label": "events.js",
+      "file_type": "code",
+      "source_file": "js/events.js",
+      "source_location": "L1",
+      "id": "js_events_js",
+      "community": 3,
+      "norm_label": "events.js"
+    },
+    {
+      "label": "ui.js",
+      "file_type": "code",
+      "source_file": "js/ui.js",
+      "source_location": "L1",
+      "id": "js_ui_js",
+      "community": 4,
+      "norm_label": "ui.js"
+    },
+    {
+      "label": "app.js",
+      "file_type": "code",
+      "source_file": "js/app.js",
+      "source_location": "L1",
+      "id": "js_app_js",
+      "community": 0,
+      "norm_label": "app.js"
+    },
+    {
+      "label": "close()",
+      "file_type": "code",
+      "source_file": "js/app.js",
+      "source_location": "L37",
+      "id": "js_app_close",
+      "community": 0,
+      "norm_label": "close()"
+    },
+    {
+      "label": "initScreen()",
+      "file_type": "code",
+      "source_file": "js/app.js",
+      "source_location": "L49",
+      "id": "js_app_initscreen",
+      "community": 0,
+      "norm_label": "initscreen()"
+    },
+    {
+      "label": "saxoApp()",
+      "file_type": "code",
+      "source_file": "js/app.js",
+      "source_location": "L169",
+      "id": "js_app_saxoapp",
+      "community": 0,
+      "norm_label": "saxoapp()"
+    },
+    {
+      "label": "storage.js",
+      "file_type": "code",
+      "source_file": "js/storage.js",
+      "source_location": "L1",
+      "id": "js_storage_js",
+      "community": 5,
+      "norm_label": "storage.js"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "js/app.js",
+      "source_location": "L37",
+      "weight": 1.0,
+      "_src": "js_app_js",
+      "_tgt": "js_app_close",
+      "source": "js_app_js",
+      "target": "js_app_close",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "js/app.js",
+      "source_location": "L49",
+      "weight": 1.0,
+      "_src": "js_app_js",
+      "_tgt": "js_app_initscreen",
+      "source": "js_app_js",
+      "target": "js_app_initscreen",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "js/app.js",
+      "source_location": "L169",
+      "weight": 1.0,
+      "_src": "js_app_js",
+      "_tgt": "js_app_saxoapp",
+      "source": "js_app_js",
+      "target": "js_app_saxoapp",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}
