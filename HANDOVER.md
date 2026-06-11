@@ -1,6 +1,26 @@
 # HANDOVER — Saxo Agenda PWA
 
-_Dernière mise à jour : 2026-04-14_
+_Dernière mise à jour : 2026-06-11_
+
+---
+
+## Session 2026-06-11 — Refonte UI + correctifs
+
+### Changements
+
+| Sujet | Détail |
+|---|---|
+| **Bug apostrophes** | `escAttr()` (ui.js) échappait `'` en `\'` (échappement JS dans un attribut HTML) → antislashs accumulés à chaque enregistrement. Corrigé : entités HTML (`&#39;`). La combobox ne passe plus la valeur en JS inline (`selectComboEl` lit le `textContent`). `storage.js` répare automatiquement les données corrompues au chargement (`_fixBackslashes` : `\\+'` → `'`). |
+| **UI sombre épurée** | Nouvelle palette neutre quasi-noire (`#0f0f10`/`#161618`), typographie **Inter** unique (plus de DM Serif/Mono), accent laiton `#d9a44a` discret, bordures hairline, focus rings. `css/app.css` réécrit, config Tailwind mise à jour (les classes `font-serif`/`font-mono` pointent désormais vers Inter). |
+| **Vue par défaut** | Liste (`view: 'list'` dans app.js). |
+| **Archivés** | Exclus de la vue liste par défaut. Bouton « Archivés » dans la topbar (vue liste) pour les afficher ; badge « Archivé » + opacité réduite sur les cartes. |
+| **Popup permission** | Chrome 122+ propose « Autoriser à chaque visite » dans le prompt (conditions déjà remplies : handle en IndexedDB + `requestPermission()` au clic). Astuce affichée sur l'écran « Reprendre ? ». Une fois choisie, plus aucune popup. |
+| **Google Agenda** | Bouton dans la modale + icône sur chaque carte liste. Lien `calendar.google.com/calendar/render?action=TEMPLATE` pré-rempli : titre, dates (arrivée → fin du dernier set, sinon journée entière), lieu, détails complets (sets, contacts, prix, notes…). `SaxoEvents.addToGoogleCalendar(id?)`. |
+| **SW** | Cache bump `saxo-agenda-v3`. |
+
+### Vérifié
+- `node --check` sur tous les JS : OK
+- Tests Node : escAttr sans antislash + round-trip entités, `_fixBackslashes` (1 et 3 antislashs), URLs Google Calendar (avec horaires et journée entière) : OK
 
 ---
 

@@ -52,11 +52,13 @@ const SaxoUI = (() => {
    * @returns {string} HTML de la combobox
    */
   function buildCombo(id, placeholder, options, value = '') {
-    // Chaque option est un div cliquable qui remplit l'input
+    // Chaque option est un div cliquable qui remplit l'input.
+    // La valeur est lue depuis le DOM (textContent) — on ne passe jamais
+    // la chaîne dans du JS inline, ce qui évite tout problème d'échappement.
     const opts = options.map(o =>
       `<div class="combo-option"
-            onmousedown="SaxoUI.selectCombo('${id}','${escAttr(o)}')"
-            ontouchstart="SaxoUI.selectCombo('${id}','${escAttr(o)}')">
+            onmousedown="SaxoUI.selectComboEl('${id}', this)"
+            ontouchstart="SaxoUI.selectComboEl('${id}', this)">
          <span>${escHtml(o)}</span>
        </div>`
     ).join('');
@@ -117,6 +119,16 @@ const SaxoUI = (() => {
     closeCombo(id);
   }
 
+  /**
+   * Variante : sélectionne une option en lisant sa valeur depuis le DOM.
+   * @param {string}      id — ID de l'input cible
+   * @param {HTMLElement} el — élément .combo-option cliqué
+   */
+  function selectComboEl(id, el) {
+    const val = el.querySelector('span')?.textContent ?? '';
+    selectCombo(id, val);
+  }
+
 
   /* ══════════════════════════════════════
      SÉCURITÉ — échappement HTML
@@ -136,10 +148,17 @@ const SaxoUI = (() => {
   }
 
   /**
-   * Échappe pour usage dans un attribut HTML (valeur entre guillemets).
+   * Échappe pour usage dans un attribut HTML (valeur entre guillemets doubles).
+   * NB : on utilise des entités HTML, jamais d'antislash (l'antislash est
+   * un échappement JavaScript, pas HTML — il s'affichait tel quel et
+   * s'accumulait à chaque enregistrement).
    */
   function escAttr(s) {
-    return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return (s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;');
   }
 
 
@@ -168,6 +187,7 @@ const SaxoUI = (() => {
     closeCombo,
     filterCombo,
     selectCombo,
+    selectComboEl,
     escHtml,
     escAttr,
     refreshIcons,

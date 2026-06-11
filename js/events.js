@@ -566,6 +566,103 @@ const SaxoEvents = (() => {
 
 
   /* ══════════════════════════════════════
+     GOOGLE AGENDA — lien "Ajouter à Google Agenda"
+     ══════════════════════════════════════ */
+
+  /** Ajoute des minutes à une heure "HH:MM". Retourne "HH:MM". */
+  function _addMinutes(hhmm, minutes) {
+    const [h, m] = hhmm.split(':').map(Number);
+    const total  = (h * 60 + m + minutes) % (24 * 60);
+    return String(Math.floor(total / 60)).padStart(2, '0') + ':' +
+           String(total % 60).padStart(2, '0');
+  }
+
+  /**
+   * Construit le paramètre `dates` de Google Calendar.
+   * - Avec horaires : YYYYMMDDTHHMMSS/YYYYMMDDTHHMMSS (heure locale)
+   * - Sans horaire  : événement "journée entière" YYYYMMDD/YYYYMMDD+1
+   */
+  function _gcalDates(ev) {
+    if (!ev.date) return null;
+    const d = ev.date.replace(/-/g, '');
+
+    const sets  = (ev.sets || []).filter(s => s.debut || s.fin);
+    const start = ev.heureArrivee || ev.heureIntervention || sets[0]?.debut || '';
+    const lastEnd = sets.map(s => s.fin).filter(Boolean).pop() || '';
+
+    if (!start) {
+      /* Journée entière : date de fin exclusive = lendemain */
+      const next = new Date(ev.date + 'T00:00:00');
+      next.setDate(next.getDate() + 1);
+      const n = next.getFullYear() +
+                String(next.getMonth() + 1).padStart(2, '0') +
+                String(next.getDate()).padStart(2, '0');
+      return `${d}/${n}`;
+    }
+
+    /* Fin : dernier set, sinon début + 3 h (et fin > début) */
+    let end = lastEnd && lastEnd > start ? lastEnd : _addMinutes(start, 180);
+    const t = s => s.replace(':', '') + '00';
+    return `${d}T${t(start)}/${d}T${t(end)}`;
+  }
+
+  /** Construit le texte "détails" de l'événement Google. */
+  function _gcalDetails(ev) {
+    const L = [];
+    if (ev.type)              L.push('Typologie : ' + ev.type);
+    if (ev.groupe)            L.push('Groupe : ' + ev.groupe);
+    if (ev.organisateur)      L.push('Organisateur : ' + ev.organisateur);
+    if (ev.prix)              L.push('Prix : ' + ev.prix + ' €');
+    if (ev.heureArrivee)      L.push('Arrivée : ' + ev.heureArrivee);
+    if (ev.heureIntervention) L.push('1ère intervention : ' + ev.heureIntervention);
+
+    (ev.sets || []).forEach((s, i) => {
+      if (!s.type && !s.debut && !s.lieu) return;
+      L.push(`Set ${i + 1} : ${s.type || '—'} ${s.debut || ''}${s.fin ? '–' + s.fin : ''}` +
+             (s.lieu ? ' @ ' + s.lieu : ''));
+    });
+
+    (ev.contacts || []).forEach(c => {
+      const line = [c.prenom, c.nom].filter(Boolean).join(' ');
+      const coord = [c.tel, c.mail].filter(Boolean).join(' · ');
+      if (line || coord) L.push('Contact : ' + [line, coord].filter(Boolean).join(' — '));
+    });
+
+    if (ev.partners?.length) L.push('Partenaires : ' + ev.partners.join(', '));
+    (ev.notes || []).forEach(n => L.push('Note : ' + n));
+
+    return L.join('\n');
+  }
+
+  /**
+   * Ouvre Google Calendar pré-rempli avec l'événement.
+   * @param {string|null} id — ID de l'événement ; null = formulaire en cours
+   */
+  function addToGoogleCalendar(id = null) {
+    const ev = id
+      ? (window._db?.events || []).find(e => e.id === id)
+      : _collectForm();
+    if (!ev) return;
+
+    const dates = _gcalDates(ev);
+    if (!dates) {
+      SaxoUI.toast('Renseignez une date d\'abord', 'error');
+      return;
+    }
+
+    const params = new URLSearchParams({
+      action:   'TEMPLATE',
+      text:     ev.name || 'Événement saxo',
+      dates,
+      details:  _gcalDetails(ev),
+      location: ev.lieu || '',
+    });
+
+    window.open('https://calendar.google.com/calendar/render?' + params.toString(), '_blank');
+  }
+
+
+  /* ══════════════════════════════════════
      UTILITAIRES
      ══════════════════════════════════════ */
 
@@ -587,6 +684,7 @@ const SaxoEvents = (() => {
     addNote,
     addPartner,
     removeBlock,
+    addToGoogleCalendar,
   };
 
 })();

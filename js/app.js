@@ -169,11 +169,12 @@ function initScreen() {
 function saxoApp() {
   return {
     /* ── État local du composant ── */
-    view:        'agenda',
-    calView:     'month',
-    calDate:     new Date(),
-    calTitle:    '',
-    sidebarOpen: false,
+    view:         'list',     /* vue par défaut : liste */
+    calView:      'month',
+    calDate:      new Date(),
+    calTitle:     '',
+    sidebarOpen:  false,
+    showArchived: false,      /* afficher les événements archivés dans la liste */
 
     /* ── Initialisation ── */
     init() {
@@ -203,8 +204,13 @@ function saxoApp() {
       if (this.view === 'agenda') {
         SaxoCalendar.render(this.calView, this.calDate);
       } else {
-        SaxoCalendar.renderList();
+        SaxoCalendar.renderList(this.showArchived);
       }
+    },
+
+    toggleArchived() {
+      this.showArchived = !this.showArchived;
+      this.renderCurrentView();
     },
 
     calPrev() {

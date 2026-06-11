@@ -11,7 +11,7 @@
    ══════════════════════════════════════════════════════════ */
 
 /* Nom du cache versionné — incrémenter à chaque déploiement majeur */
-const CACHE_NAME = 'saxo-agenda-v2';
+const CACHE_NAME = 'saxo-agenda-v3';
 
 /* Ressources à précacher lors de l'installation */
 const PRECACHE_URLS = [

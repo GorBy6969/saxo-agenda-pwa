@@ -7,7 +7,7 @@
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#21213a">
+  <meta name="theme-color" content="#161618">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,7 +19,7 @@
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/fr.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/app.css">
 
@@ -28,18 +28,20 @@
       theme: {
         extend: {
           colors: {
-            bg:      '#181826',
-            bg2:     '#21213a',
-            bg3:     '#2a2a46',
-            bg4:     '#333355',
-            accent:  '#d4a84c',
-            accent2: '#f0d070',
-            muted:   '#8a8580',
+            bg:      '#0f0f10',
+            bg2:     '#161618',
+            bg3:     '#1e1e21',
+            bg4:     '#27272b',
+            accent:  '#d9a44a',
+            accent2: '#ecc06e',
+            muted:   '#6f6f77',
           },
           fontFamily: {
-            serif: ['"DM Serif Display"', 'Georgia', 'serif'],
-            mono:  ['"DM Mono"', 'monospace'],
-            sans:  ['"DM Sans"', 'sans-serif'],
+            /* Une seule famille : Inter. Les classes font-serif/font-mono
+               existantes restent valides et pointent vers Inter. */
+            serif: ['Inter', 'system-ui', 'sans-serif'],
+            mono:  ['Inter', 'system-ui', 'sans-serif'],
+            sans:  ['Inter', 'system-ui', 'sans-serif'],
           }
         }
       }
@@ -61,8 +63,8 @@
     <div class="bg-bg2 border border-accent/30 rounded-2xl p-8 max-w-sm w-full text-center mx-4 shadow-xl">
 
       <!-- Logo -->
-      <div class="text-5xl mb-3">♪</div>
-      <h1 class="font-serif text-3xl text-accent2 mb-2">Saxo Agenda</h1>
+      <div class="text-4xl mb-3 text-accent">♪</div>
+      <h1 class="text-2xl font-semibold tracking-tight mb-2">Saxo Agenda</h1>
       <p class="text-muted text-sm mb-7 leading-relaxed">
         Gérez vos engagements musicaux.
       </p>
@@ -80,12 +82,16 @@
       <!-- ── Cas 1 : Demande de confirmation pour rouvrir le dernier fichier (Android) ── -->
       <div x-show="screen === 'ask-reopen' && !loading" class="flex flex-col gap-3">
         <p class="text-sm text-gray-300 mb-1">
-          Reprendre avec <span class="text-accent2 font-mono text-xs" x-text="_pendingFileName"></span> ?
+          Reprendre avec <span class="text-accent2 text-xs" x-text="_pendingFileName"></span> ?
         </p>
         <button @click="confirmReopen()" class="btn-primary w-full py-3 text-base justify-center">
           <i data-lucide="folder-open" class="w-4 h-4"></i>
           Oui, reprendre
         </button>
+        <p class="text-xs text-muted leading-relaxed">
+          Astuce : dans la popup Chrome, choisissez
+          «&nbsp;Autoriser à chaque visite&nbsp;» pour ne plus revoir cette demande.
+        </p>
         <button @click="screen = 'start'" class="btn-secondary w-full py-2 text-sm justify-center">
           Choisir un autre fichier
         </button>
@@ -169,9 +175,11 @@
 
       <!-- Logo + fichier actif -->
       <div class="p-5 pb-4 border-b border-white/10">
-        <h1 class="font-serif text-xl text-accent2 tracking-wide">Saxo Agenda</h1>
-        <p id="file-name" class="text-xs text-accent/70 font-mono mt-0.5 truncate">—</p>
-        <p id="sync-status" class="text-xs text-muted font-mono mt-0.5">—</p>
+        <h1 class="text-[15px] font-semibold tracking-tight">
+          <span class="text-accent mr-1">♪</span> Saxo Agenda
+        </h1>
+        <p id="file-name" class="text-xs text-muted mt-1.5 truncate">—</p>
+        <p id="sync-status" class="text-xs text-muted mt-0.5">—</p>
       </div>
 
       <!-- Navigation -->
@@ -215,8 +223,17 @@
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
 
-        <span class="font-serif text-lg flex-1"
-              x-text="view === 'agenda' ? 'Agenda' : 'Tous les événements'"></span>
+        <span class="font-semibold text-[15px] tracking-tight flex-1"
+              x-text="view === 'agenda' ? 'Agenda' : 'Événements'"></span>
+
+        <!-- Toggle archivés (vue liste uniquement) -->
+        <button x-show="view === 'list'" @click="toggleArchived()"
+                :class="showArchived ? 'active' : ''"
+                class="btn-secondary"
+                title="Afficher / masquer les événements archivés">
+          <i data-lucide="archive" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Archivés</span>
+        </button>
 
         <button @click="openModal(null)" class="btn-primary">
           <i data-lucide="plus" class="w-4 h-4"></i>
@@ -240,7 +257,7 @@
             <button @click="calPrev()" class="text-gray-400 hover:text-accent2 p-1">
               <i data-lucide="chevron-left" class="w-4 h-4"></i>
             </button>
-            <span class="font-serif text-sm min-w-[120px] text-center" x-text="calTitle"></span>
+            <span class="text-sm font-medium min-w-[120px] text-center" x-text="calTitle"></span>
             <button @click="calNext()" class="text-gray-400 hover:text-accent2 p-1">
               <i data-lucide="chevron-right" class="w-4 h-4"></i>
             </button>
@@ -272,7 +289,7 @@
                 rounded-t-2xl max-h-[92vh] overflow-y-auto animate-slide-up">
 
       <div class="flex items-center gap-3 px-5 py-4 border-b border-white/10 sticky top-0 bg-bg2 z-10">
-        <span class="font-serif text-xl flex-1" id="modal-title">Nouvel événement</span>
+        <span class="font-semibold text-base tracking-tight flex-1" id="modal-title">Nouvel événement</span>
         <button @click="$store.modal.close()" class="btn-icon">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
@@ -291,6 +308,11 @@
                 style="display:none" class="btn-secondary">
           <i data-lucide="copy" class="w-3.5 h-3.5"></i>
           Dupliquer
+        </button>
+        <button onclick="SaxoEvents.addToGoogleCalendar()" class="btn-secondary"
+                title="Ajouter à Google Agenda">
+          <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Google Agenda</span>
         </button>
         <div class="flex-1"></div>
         <button @click="$store.modal.close()" class="btn-secondary">Annuler</button>

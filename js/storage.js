@@ -35,6 +35,38 @@ const SaxoStorage = (() => {
 
 
   /* ══════════════════════════════════════
+     NORMALISATION / RÉPARATION DES DONNÉES
+     ══════════════════════════════════════ */
+
+  /**
+   * Supprime les antislashs parasites accumulés devant les apostrophes
+   * par l'ancien bug d'échappement (ex : "Vin d\\\'honneur" → "Vin d'honneur").
+   * Parcourt récursivement toutes les chaînes de l'objet.
+   */
+  function _fixBackslashes(node) {
+    if (typeof node === 'string') return node.replace(/\\+'/g, "'");
+    if (Array.isArray(node))      return node.map(_fixBackslashes);
+    if (node && typeof node === 'object') {
+      const out = {};
+      for (const k of Object.keys(node)) out[k] = _fixBackslashes(node[k]);
+      return out;
+    }
+    return node;
+  }
+
+  /** Structure minimale + réparation des apostrophes. */
+  function _normalizeData(data) {
+    data = _fixBackslashes(data);
+    if (!data.events) data.events = [];
+    if (!data.meta)   data.meta   = {
+      typologies: ['Concert', 'Mariage'],
+      setTypes:   ['Messe', 'Cérémonie laïque', "Vin d'honneur", 'Défilé', 'Scène'],
+    };
+    return data;
+  }
+
+
+  /* ══════════════════════════════════════
      SUPPORT
      ══════════════════════════════════════ */
 
@@ -169,9 +201,7 @@ const SaxoStorage = (() => {
         if (!file) { resolve(null); return; }
         try {
           const text = await file.text();
-          const data = JSON.parse(text);
-          if (!data.events) data.events = [];
-          if (!data.meta)   data.meta   = { typologies: ['Concert', 'Mariage'], setTypes: [] };
+          const data = _normalizeData(JSON.parse(text));
           /* Mémorise le nom pour l'afficher dans la sidebar */
           _fallbackFileName = file.name;
           saveToLocalStorage(data);
@@ -259,11 +289,8 @@ const SaxoStorage = (() => {
     try {
       const file = await handle.getFile();
       const text = await file.text();
-      const data = JSON.parse(text);
-      /* Normalise la structure au minimum attendu */
-      if (!data.events) data.events = [];
-      if (!data.meta)   data.meta   = { typologies: ['Concert', 'Mariage'], setTypes: ['Messe', 'Cérémonie laïque', "Vin d'honneur", 'Défilé', 'Scène'] };
-      return data;
+      /* Normalise la structure + répare les apostrophes antislashées */
+      return _normalizeData(JSON.parse(text));
     } catch (e) {
       console.warn('[FS] Lecture fichier échouée :', e.message);
       return null;
@@ -368,10 +395,7 @@ const SaxoStorage = (() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) return null;
-      const data = JSON.parse(raw);
-      if (!data.events) data.events = [];
-      if (!data.meta)   data.meta   = { typologies: ['Concert', 'Mariage'], setTypes: [] };
-      return data;
+      return _normalizeData(JSON.parse(raw));
     } catch (e) {
       console.warn('[LS] Lecture échouée :', e.message);
       return null;

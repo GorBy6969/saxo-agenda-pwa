@@ -173,14 +173,17 @@ const SaxoCalendar = (() => {
      ══════════════════════════════════════ */
 
   /**
-   * Génère la liste de tous les événements triés par date
-   * et l'injecte dans #view-list.
+   * Génère la liste des événements triés par date et l'injecte dans #view-list.
+   * @param {boolean} showArchived — true pour inclure les événements archivés
    */
-  function renderList() {
+  function renderList(showArchived = false) {
     const el = document.getElementById('view-list');
     if (!el) return;
 
-    const sorted = [...(window._db?.events || [])]
+    const all      = window._db?.events || [];
+    const archived = all.filter(e => e.archived).length;
+    const sorted   = all
+      .filter(e => showArchived || !e.archived)
       .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
     if (!sorted.length) {
@@ -194,7 +197,9 @@ const SaxoCalendar = (() => {
             <line x1="3"  y1="10" x2="21" y2="10"/>
           </svg>
           <p>Aucun événement</p>
-          <span>Créez votre premier engagement</span>
+          <span>${archived
+            ? archived + ' événement(s) archivé(s) — utilisez « Archivés » pour les afficher'
+            : 'Créez votre premier engagement'}</span>
         </div>`;
       return;
     }
@@ -204,22 +209,31 @@ const SaxoCalendar = (() => {
         const d   = ev.date ? new Date(ev.date + 'T00:00:00') : null;
         const day = d ? d.getDate() : '—';
         const mon = d ? MONTHS_SHORT[d.getMonth()] : '';
+        const yr  = d ? d.getFullYear() : '';
         return `
-          <div class="event-card" onclick="SaxoEvents.openModal('${ev.id}')">
+          <div class="event-card ${ev.archived ? 'archived' : ''}"
+               onclick="SaxoEvents.openModal('${ev.id}')">
             <div class="event-card-date">
               <div class="ecd-day">${day}</div>
-              <div class="ecd-mon">${mon}</div>
+              <div class="ecd-mon">${mon} ${yr ? `<span class="ecd-yr">${yr}</span>` : ''}</div>
             </div>
             <div class="event-card-info">
               <div class="event-card-name">${SaxoUI.escHtml(ev.name || 'Sans titre')}</div>
               <div class="event-card-meta">
                 ${ev.heureIntervention || ''}
-                ${ev.lieu ? '· ' + SaxoUI.escHtml(ev.lieu) : ''}
+                ${ev.lieu ? (ev.heureIntervention ? ' · ' : '') + SaxoUI.escHtml(ev.lieu) : ''}
               </div>
             </div>
+            ${ev.archived ? '<span class="event-archived-badge">Archivé</span>' : ''}
             ${ev.type ? `<span class="event-type-badge">${SaxoUI.escHtml(ev.type)}</span>` : ''}
+            <button class="btn-gcal" title="Ajouter à Google Agenda"
+                    onclick="event.stopPropagation(); SaxoEvents.addToGoogleCalendar('${ev.id}')">
+              <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+            </button>
           </div>`;
       }).join('') + '</div>';
+
+    SaxoUI.refreshIcons();
   }
 
 
